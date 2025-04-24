@@ -1,23 +1,46 @@
-import express from 'express'
-import dotenv from 'dotenv';
-import cors from 'cors'
-import connectDB from './dbConfig/db.js';
-import userRoutes from './routes/userRoutes.js';
-connectDB();
-const app = express();
+import express from "express";
+import http from "http";
+import { WebSocketServer } from "ws";
+import cookieParser from "cookie-parser";
+import dotenv from "dotenv";
+import cors from "cors";
+// import {connectDB} from "./dbConfig/db.js"
+// Routes and DB
+import connectDB from "./dbConfig/db.js";
+import authRoutes from "./routes/user.routes.js";
+
+// Init
 dotenv.config();
-const PORT = process.env.PORT || 5000;
-app.use(cors());
+connectDB();
+
+const app = express();
+const server = http.createServer(app);
+
+// WebSocket server
+const wss = new WebSocketServer({ server });
+
+wss.on("connection", (ws) => {
+    console.log("🔌 Client connected via WebSocket");
+
+    ws.on("message", (message) => {
+        console.log("📨 Message from client:", message.toString());
+        ws.send(`👋 Pong: Received "${message}"`);
+    });
+
+    ws.on("close", () => {
+        console.log("❌ Client disconnected");
+    });
+});
+
+// Middleware
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-// import { Configuration, OpenAIApi } from 'openai';
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-    console.log(`http://localhost:${PORT}`);
-})
+app.use(cookieParser());
 
-app.get("/" , (res) => {
-    console.log("Hello World", res);
-})
+// Routes
+app.use("/api/auth", authRoutes);
 
-app.use("/api/users", userRoutes);
+app.get("/", (req, res) => res.send("🌐 Learnix Node API Running"));
+
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => console.log(`🚀 Server + WebSocket running on http://localhost:${PORT}`));
