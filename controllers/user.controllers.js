@@ -1,4 +1,4 @@
-import User from "../models/User.js";
+import User from "../models/user.model.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import validator from "validator";
@@ -64,7 +64,7 @@ export const loginUser = async (req, res) => {
         if (!isPasswordValid) {
             return res.status(401).json({ message: "Invalid credentials" });
         }
-
+        const message = user.role === "admin" ? "Admin login successful" : "User login successful";
         // Generate JWT with more secure options
         const token = jwt.sign(
             { userId: user._id },
@@ -84,10 +84,24 @@ export const loginUser = async (req, res) => {
         });
 
         // Don't send password in response
-        const userResponse = { _id: user._id, name: user.name, email: user.email };
-        res.status(200).json({ message: "Login successful", user: userResponse });
+        const userResponse = { _id: user._id, name: user.name, email: user.email, role: user.role };
+        res.status(200).json({ user: userResponse, message });
     } catch (error) {
         console.error('Login error:', error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export const logout = async(req, res) => {
+    try {
+        res.cookie("token", "",{
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            expires: new Date(0), // Set expiration date to the past
+        })
+    } catch (error) {
+        console.error('Logout error:', error);
         res.status(500).json({ message: "Internal server error" });
     }
 }
