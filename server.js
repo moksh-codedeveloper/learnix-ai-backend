@@ -8,7 +8,7 @@ import cors from "cors";
 // Routes and DB
 import connectDB from "./dbConfig/db.js";
 import authRoutes from "./routes/user.routes.js";
-
+import { connectToFastAPI } from "./connectWSClient/connectFastAPI.js";
 // Init
 dotenv.config();
 connectDB();
@@ -31,7 +31,7 @@ wss.on("connection", (ws) => {
         console.log("❌ Client disconnected");
     });
 });
-
+connectToFastAPI();
 // Middleware
 app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.use(express.json());
